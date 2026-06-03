@@ -1,4 +1,4 @@
-<img width="1066" height="786" alt="Diagrama-Ecommerce" src="https://github.com/user-attachments/assets/2617f3db-a53b-443f-9496-37feb69cd904" /># Desafio DIO - Projeto E-commerce
+# Desafio DIO - Projeto E-commerce
 
 Este projeto faz parte de um **desafio proposto pela DIO (Digital Innovation One)**, cujo objetivo foi **implementar um banco de dados completo para um e-commerce**, desde a modelagem relacional até a persistência de dados e consultas SQL.
 
@@ -104,6 +104,8 @@ Este projeto faz parte de um **desafio proposto pela DIO (Digital Innovation One
 
 - **MySQL** – para criação do banco de dados e execução de queries.
 - **Git & GitHub** – para versionamento e controle do projeto.
+
+## Tabela Relacional
 
 <img width="1066" height="786" alt="Diagrama-Ecommerce" src="https://github.com/user-attachments/assets/fa85f6af-ac55-4db3-950b-f5cbf9fad899" />
 
