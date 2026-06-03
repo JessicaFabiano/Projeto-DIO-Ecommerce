@@ -3,138 +3,152 @@
 create database ecommerce;
 use ecommerce;
 
--- Criar as tabela cliente
-create table clients(
-		idClient int auto_increment primary key,
-        Fname varchar(10),
-        Minit char(3),
-        Lname varchar(20),
-        CPF char(11) not null,
-        Address varchar(255),
-        constraint unique_cpf_client unique (CPF)
+CREATE TABLE clients (
+    idClient INT AUTO_INCREMENT PRIMARY KEY,
+    Fname VARCHAR(50) NOT NULL,
+    Minit CHAR(3),
+    Lname VARCHAR(50),
+    Address VARCHAR(100),
+    BirthDate DATE,
+    CPF CHAR(11),
+    CNPJ CHAR(14),
+    CONSTRAINT chk_tipo_cliente CHECK (
+        (CPF IS NOT NULL AND CNPJ IS NULL) 
+        OR 
+        (CPF IS NULL AND CNPJ IS NOT NULL)
+    ),
+    CONSTRAINT unique_cpf UNIQUE (CPF),
+    CONSTRAINT unique_cnpj UNIQUE (CNPJ)
 );
 
-alter table clients auto_increment=1;
+CREATE TABLE NaturalPerson (
+    idClient INT PRIMARY KEY,
+    CPF CHAR(11) NOT NULL,
+    birthDate DATE,
 
--- desc clients;
--- Criar as tabela produto
+    CONSTRAINT fk_naturalperson_client 
+        FOREIGN KEY (idClient) REFERENCES clients(idClient),
 
--- size = dimensão do produto
-create table product(
-		idProduct int auto_increment primary key,
-        Pname varchar(30) not null,
-        classification_kids bool default false,
-        category enum('Eletronico', 'Vestimenta', 'Brinquedos', 'Alimentos', 'Moveis') not null,
-        avaliation float default 0,
-        size varchar(10)
-);
-        
--- para ser continuado no desafio: termine de implementar a tabela e crie a conexão com as tabes necessárias
--- além disso, reflita essa modificação no diagrama de esquema relacional
--- criar constraints relacionadas ao pagamento
-
-create table payments(
-		idClient int,
-        id_payment int,
-        typePayment enum('Boleto','Cartão','Dois cartões'),
-        limitAvaliable float,
-        primary key(idClient, id_payment)        
-);
-        
--- Criar tabela pedido
-create table orders(
-		idOrder int auto_increment primary key,
-        idOrderClient int,
-        orderStatus enum('Cancelado', 'Confirmado', 'Em processamento') default 'Em processamento',
-        orderDescription varchar(255),
-        sendValue float default 10,
-        paymentCash boolean default false,
-        constraint fk_orders_client foreign key (idOrderClient) references clients(idClient)
-				on update cascade
-);
-alter table orders auto_increment=1;
-
-desc orders;
-
--- Criar tabela estoque
-create table productStorage(
-		idProdStorage int auto_increment primary key,
-        storageLocation varchar(255),
-        quantity int default 0
+    CONSTRAINT unique_cpf UNIQUE (CPF)
 );
 
--- Criar tabela fornecedor
-create table supplier(
-		idSupplier int auto_increment primary key,
-		SocialName varchar(255) not null,
-        CNPJ char(15) not null,
-        contact char(11) not null,
-        constraint unique_supplier unique (CNPJ)
-);
-desc supplier;
+CREATE TABLE LegalPerson (
+    idClient INT PRIMARY KEY,
+    CNPJ CHAR(14) NOT NULL,
+    companyName VARCHAR(100) NOT NULL,
 
--- Criar tabela vendedor
-create table seller(
-		idSeller int auto_increment primary key,
-		SocialName varchar(255) not null,
-        AbstName varchar (255),
-        CNPJ char(15) not null,
-        CPF char(9),
-        location varchar(255),
-        contact char(11) not null,
-        constraint unique_cnpj_seller unique (CNPJ),
-        constraint unique_cpf_seller unique (CPF)
+    CONSTRAINT fk_legalperson_client 
+        FOREIGN KEY (idClient) REFERENCES clients(idClient),
+
+    CONSTRAINT unique_cnpj UNIQUE (CNPJ)
 );
 
-create table productSeller(
-	idPseller int,
-    idProduct int,
-	prodQuantity int default 1,
-    primary key (idPseller,  idProduct),
-    constraint fk_product_seller foreign key ( idPseller) references seller(idSeller),
-    constraint fk_product_product foreign key (idProduct) references product(idProduct)
+CREATE TABLE product (
+    idProduct INT AUTO_INCREMENT PRIMARY KEY,
+    Pname VARCHAR(50) NOT NULL,
+    classification_kids BOOL DEFAULT FALSE,
+    category ENUM('Eletrônico', 'Vestimenta', 'Brinquedos', 'Alimentos', 'Móveis') NOT NULL,
+    assessment FLOAT DEFAULT 0,
+    size VARCHAR(20)
 );
 
-desc productSeller;
-
-create table productOrder(
-    idPOproduct int,
-    idPOorder int,
-    poQuantity int default 1,
-    poStatus enum('Disponível', 'Sem estoque') default 'Disponível',
-    
-    primary key (idPOproduct, idPOorder),
-    
-    constraint fk_productorder_seller 
-        foreign key (idPOproduct) references product(idProduct),
-        
-    constraint fk_productorder_order
-        foreign key (idPOorder) references orders(idOrder)
+CREATE TABLE payments (
+    idPayment INT AUTO_INCREMENT PRIMARY KEY,
+    idClient INT,
+    typePayment ENUM('Boleto', 'Cartão', 'Dois cartões'),
+    limitAvailable FLOAT,
+    paymentDate DATE,
+    CONSTRAINT fk_payment_client FOREIGN KEY (idClient) REFERENCES clients(idClient)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-
-create table storageLocation(
-	idLproduct int,
-    idLstorage int,
-	location varchar(255) not null,
-    primary key (idLproduct,  idLstorage),
-    constraint fk_storage_location_product foreign key ( idLproduct) references product(idProduct),
-    constraint fk_storage_location_storage foreign key (idLstorage) references productStorage(idProdStorage)
+CREATE TABLE orders (
+    idOrder INT AUTO_INCREMENT PRIMARY KEY,
+    idOrderClient INT,
+    orderStatus ENUM('Cancelado', 'Confirmado', 'Em processamento') DEFAULT 'Em processamento',
+    orderDescription VARCHAR(255),
+    sendValue FLOAT DEFAULT 10,
+    paymentCash BOOL DEFAULT FALSE,
+    orderDate DATE DEFAULT (CURRENT_DATE),
+    idPayment INT,
+    CONSTRAINT fk_order_client FOREIGN KEY (idOrderClient) REFERENCES clients(idClient)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_order_payment FOREIGN KEY (idPayment) REFERENCES payments(idPayment)
+        ON UPDATE CASCADE ON DELETE SET NULL
 );
 
-create table productSupplier(
-	idPsSupplier int,
-    idPsProduct int,
-	quantity int not null,
-    primary key (idPsSupplier, idPsProduct),
-    constraint fk_product_supplier_supplier foreign key ( idPsSupplier) references supplier(idSupplier),
-    constraint fk_product_supplier_product foreign key (idPsProduct) references product(idProduct)
+CREATE TABLE delivery (
+    idDelivery INT AUTO_INCREMENT PRIMARY KEY,
+    idOrder INT,
+    deliveryStatus ENUM('Pendente', 'Em trânsito', 'Entregue', 'Cancelado') DEFAULT 'Pendente',
+    trackingCode VARCHAR(30),
+    deliveryDate DATE,
+    CONSTRAINT fk_delivery_order FOREIGN KEY (idOrder) REFERENCES orders(idOrder)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-desc productSupplier;
-show tables;
+CREATE TABLE productStorage (
+    idProdStorage INT AUTO_INCREMENT PRIMARY KEY,
+    storageLocation VARCHAR(255),
+    quantity INT DEFAULT 0
+);
 
-show databases;
-use information_schema;
-show tables;
-select * from referential_constraints where constraint_schema = 'ecommerce';
+CREATE TABLE supplier (
+    idSupplier INT AUTO_INCREMENT PRIMARY KEY,
+    SocialName VARCHAR(255) NOT NULL,
+    CNPJ CHAR(14) NOT NULL UNIQUE,
+    contact CHAR(11)
+);
+
+CREATE TABLE seller (
+    idSeller INT AUTO_INCREMENT PRIMARY KEY,
+    SocialName VARCHAR(255) NOT NULL,
+    CNPJ CHAR(14) UNIQUE,
+    CPF CHAR(11) UNIQUE,
+    contact CHAR(11)
+);
+
+CREATE TABLE productSeller (
+    idSeller INT,
+    idProduct INT,
+    quantity INT DEFAULT 1,
+    PRIMARY KEY (idSeller, idProduct),
+    CONSTRAINT fk_productSeller_seller FOREIGN KEY (idSeller) REFERENCES seller(idSeller)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_productSeller_product FOREIGN KEY (idProduct) REFERENCES product(idProduct)
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE productOrder (
+    idProduct INT,
+    idOrder INT,
+    quantity INT DEFAULT 1,
+    status ENUM('Disponível', 'Sem estoque') DEFAULT 'Disponível',
+    PRIMARY KEY (idProduct, idOrder),
+    CONSTRAINT fk_productOrder_product FOREIGN KEY (idProduct) REFERENCES product(idProduct)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_productOrder_order FOREIGN KEY (idOrder) REFERENCES orders(idOrder)
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE storageLocation (
+    idProduct INT,
+    idStorage INT,
+    location VARCHAR(255) NOT NULL,
+    PRIMARY KEY (idProduct, idStorage),
+    CONSTRAINT fk_storageLocation_product FOREIGN KEY (idProduct) REFERENCES product(idProduct)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_storageLocation_storage FOREIGN KEY (idStorage) REFERENCES productStorage(idProdStorage)
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE productSupplier (
+    idSupplier INT,
+    idProduct INT,
+    quantity INT NOT NULL,
+    PRIMARY KEY (idSupplier, idProduct),
+    CONSTRAINT fk_productSupplier_supplier FOREIGN KEY (idSupplier) REFERENCES supplier(idSupplier)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_productSupplier_product FOREIGN KEY (idProduct) REFERENCES product(idProduct)
+        ON UPDATE CASCADE ON DELETE CASCADE
+);
